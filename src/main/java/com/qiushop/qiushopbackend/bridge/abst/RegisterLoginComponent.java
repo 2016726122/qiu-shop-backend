@@ -12,23 +12,23 @@ public class RegisterLoginComponent extends AbstractRegisterLoginComponent{
     }
 
     @Override
-    protected String login(String userName, String password) {
+    public String login(String userName, String password) {
         //直接通过桥梁，调用右路 Implementor 的方法即可，把具体实现交给右路的实现类
         return funcInterface.login(userName,password);
     }
 
     @Override
-    protected String register(UserInfo userInfo) {
+    public String register(UserInfo userInfo) {
         return funcInterface.register(userInfo);
     }
 
     @Override
-    protected boolean checkUserExists(String userName) {
+    public boolean checkUserExists(String userName) {
         return funcInterface.checkUserExists(userName);
     }
 
     @Override
-    protected String login3rd(HttpServletRequest request) {
+    public String login3rd(HttpServletRequest request) {
         return funcInterface.login3rd(request);
     }
 }

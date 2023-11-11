@@ -1,28 +1,22 @@
 package com.qiushop.qiushopbackend.bridge.function;
 
+import com.qiushop.qiushopbackend.bridge.abst.factory.RegisterLoginComponentFactory;
 import com.qiushop.qiushopbackend.pojo.UserInfo;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
-public class RegisterLoginByQQ implements RegisterLoginFuncInterface {
-
-    @Override
-    public String login(String account, String password) {
-        return null;
-    }
-
-    @Override
-    public String register(UserInfo userInfo) {
-        return null;
-    }
-
-    @Override
-    public boolean checkUserExists(String userName) {
-        return false;
-    }
+@Component
+public class RegisterLoginByQQ extends AbstractRegisterLoginFunc implements RegisterLoginFuncInterface {
 
     @Override
     public String login3rd(HttpServletRequest request) {
         return null;
+    }
+
+    @PostConstruct
+    private void initFuncMap() {
+        RegisterLoginComponentFactory.funcMap.put("QQ",this);
     }
 }

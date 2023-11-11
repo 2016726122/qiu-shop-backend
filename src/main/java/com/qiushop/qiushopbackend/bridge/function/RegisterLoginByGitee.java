@@ -1,17 +1,21 @@
 package com.qiushop.qiushopbackend.bridge.function;
 
 import com.alibaba.fastjson.JSONObject;
+import com.qiushop.qiushopbackend.bridge.abst.factory.RegisterLoginComponentFactory;
 import com.qiushop.qiushopbackend.mapper.UserRepository;
 import com.qiushop.qiushopbackend.pojo.UserInfo;
 import com.qiushop.qiushopbackend.utils.HttpClientUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 
-public class RegisterLoginByGitee implements RegisterLoginFuncInterface {
+@Component
+public class RegisterLoginByGitee extends AbstractRegisterLoginFunc implements RegisterLoginFuncInterface {
 
     @Value("${gitee.state}")
     private String giteeState;
@@ -24,40 +28,6 @@ public class RegisterLoginByGitee implements RegisterLoginFuncInterface {
 
     @Autowired
     private UserRepository userRepository;
-
-    //实现重复
-    @Override
-    public String login(String account, String password) {
-        UserInfo userInfo = userRepository.findByUserNameAndUserPassword(account,password);
-        //匹配账号和密码失败，则返回错误信息
-        if (userInfo == null) {
-            return "account / password ERROR";
-        }
-        return "Login Success";
-    }
-
-    //实现重复
-    @Override
-    public String register(UserInfo userInfo) {
-        //如果账号重复，拒绝注册
-        if (checkUserExists(userInfo.getUserName())) {
-            throw new RuntimeException("User already registered");
-        }
-        userInfo.setCreateDate(new Date());
-        //save 是 JPA 已有方法，无须自己实现
-        userRepository.save(userInfo);
-        return "Register Success";
-    }
-
-    //实现重复
-    @Override
-    public boolean checkUserExists(String userName) {
-        UserInfo user = userRepository.findByUserName(userName);
-        if (user == null) {
-            return false;
-        }
-        return true;
-    }
 
     @Override
     public String login3rd(HttpServletRequest request) {
@@ -81,8 +51,8 @@ public class RegisterLoginByGitee implements RegisterLoginFuncInterface {
     }
 
     private String autoRegister3rdAndLogin(String userName, String password) {
-        //如果第三方账号已经登录过，则直接登录
-        if (checkUserExists(userName)) {
+        //如果第三方账号已经登录过，则直接登录. 此处“代码复用”
+        if (super.commonCheckUserExists(userName,userRepository)) {
             return login(userName,password);
         }
         //组装用户信息
@@ -90,9 +60,14 @@ public class RegisterLoginByGitee implements RegisterLoginFuncInterface {
         userInfo.setUserName(userName);
         userInfo.setUserPassword(password);
         userInfo.setCreateDate(new Date());
-        //如果第三方账号是第一次登录，先进行自动注册
-        register(userInfo);
-        //自动注册完成后，进行登录
-        return login(userName,password);
+        //如果第三方账号是第一次登录，先进行自动注册。 此处“代码复用”
+        super.commonRegister(userInfo,userRepository);
+        //自动注册完成后，进行登录。 此处“代码复用”
+        return super.commonLogin(userName,password,userRepository);
+    }
+
+    @PostConstruct
+    private void initFuncMap() {
+        RegisterLoginComponentFactory.funcMap.put("GITEE",this);
     }
 }
