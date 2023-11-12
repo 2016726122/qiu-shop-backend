@@ -18,17 +18,17 @@ public class UserBridgeService {
     private UserRepository userRepository;
 
     public String login(String account, String password) {
-        AbstractRegisterLoginComponent component = RegisterLoginComponentFactory.getComponent("Default");
+        RegisterLoginComponent component = (RegisterLoginComponent) RegisterLoginComponentFactory.getComponent("Default");
         return component.login(account, password);
     }
 
     public String register(UserInfo userInfo) {
-        AbstractRegisterLoginComponent component = RegisterLoginComponentFactory.getComponent("Default");
+        RegisterLoginComponent component = (RegisterLoginComponent) RegisterLoginComponentFactory.getComponent("Default");
         return component.register(userInfo);
     }
 
     public String login3rd(HttpServletRequest request, String type) {
-        AbstractRegisterLoginComponent component = RegisterLoginComponentFactory.getComponent(type);
+        RegisterLoginComponent component = (RegisterLoginComponent) RegisterLoginComponentFactory.getComponent(type);
         return component.login3rd(request);
     }
 }

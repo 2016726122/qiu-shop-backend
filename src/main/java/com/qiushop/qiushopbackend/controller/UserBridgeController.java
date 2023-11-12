@@ -1,9 +1,7 @@
 package com.qiushop.qiushopbackend.controller;
 
-import com.qiushop.qiushopbackend.adapter.Login3rdAdapter;
 import com.qiushop.qiushopbackend.pojo.UserInfo;
 import com.qiushop.qiushopbackend.service.UserBridgeService;
-import com.qiushop.qiushopbackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,9 +15,6 @@ public class UserBridgeController {
     //引入 UserBridgeService 依赖
     @Autowired
     private UserBridgeService userBridgeService;
-
-    @Autowired
-    private Login3rdAdapter login3rdAdapter;
 
     @PostMapping("/login")
     public String login(String account, String password){
