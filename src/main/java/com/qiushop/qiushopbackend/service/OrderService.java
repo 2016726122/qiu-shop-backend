@@ -4,7 +4,9 @@ import com.qiushop.qiushopbackend.ordermanagement.command.OrderCommand;
 import com.qiushop.qiushopbackend.ordermanagement.command.OrderCommandInvoker;
 import com.qiushop.qiushopbackend.ordermanagement.state.OrderState;
 import com.qiushop.qiushopbackend.ordermanagement.state.OrderStateChangeAction;
+import com.qiushop.qiushopbackend.pay.facade.PayFacade;
 import com.qiushop.qiushopbackend.pojo.Order;
+import com.qiushop.qiushopbackend.service.inter.OrderServiceInterface;
 import com.qiushop.qiushopbackend.utils.RedisCommonProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
@@ -16,7 +18,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 
 @Service
-public class OrderService {
+public class OrderService implements OrderServiceInterface {
 
     //依赖注入 Spring 状态机，与状态机进行交互
     @Resource
@@ -30,10 +32,16 @@ public class OrderService {
     @Autowired
     private RedisCommonProcessor redisCommonProcessor;
 
+    //引入命令模式类
     @Autowired
     private OrderCommand orderCommand;
 
+    //引入门面
+    @Autowired
+    private PayFacade payFacade;
+
     //订单创建
+    @Override
     public Order createOrder(String productId) {
         //此处orderId，需要生成全局唯一ID
         String orderId = "OID" + productId;
@@ -50,7 +58,8 @@ public class OrderService {
         return order;
     }
 
-    //订单支付,第三方支付再修改
+    //订单支付
+    @Override
     public Order pay(String orderId) {
         //从 Redis 中获取订单
         Order order = (Order) redisCommonProcessor.get(orderId);
@@ -65,6 +74,7 @@ public class OrderService {
     }
 
     //订单发送
+    @Override
     public Order send(String orderId) {
         //从 Redis 中获取订单
         Order order = (Order) redisCommonProcessor.get(orderId);
@@ -79,6 +89,7 @@ public class OrderService {
     }
 
     //订单签收
+    @Override
     public Order receive(String orderId) {
         //从 Redis 中获取订单
         Order order = (Order) redisCommonProcessor.get(orderId);
@@ -110,6 +121,13 @@ public class OrderService {
             orderStateMachine.stop();
         }
         return false;
+    }
+
+    @Override
+    public String getPayUrl(String orderId, Float price, Integer payType) {
+        Order order = (Order) redisCommonProcessor.get(orderId);
+        order.setPrice(price);
+        return payFacade.pay(order,payType);
     }
 
 }

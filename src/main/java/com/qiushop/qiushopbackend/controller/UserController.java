@@ -1,15 +1,14 @@
 package com.qiushop.qiushopbackend.controller;
 
 import com.qiushop.qiushopbackend.adapter.Login3rdAdapter;
+import com.qiushop.qiushopbackend.pojo.BusinessLaunch;
 import com.qiushop.qiushopbackend.pojo.UserInfo;
 import com.qiushop.qiushopbackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 public class UserController {
@@ -33,5 +32,12 @@ public class UserController {
     @GetMapping("/gitee")
     public String gitee(String code, String state) throws IOException {
         return login3rdAdapter.loginByGitee(code,state);
+    }
+
+    @PostMapping("/business/launch")
+    public List<BusinessLaunch> filterBusinessLaunch(@RequestParam("city") String city,
+                                                     @RequestParam("sex") String sex,
+                                                     @RequestParam("product") String product) {
+        return userService.filterBusinessLaunch(city, sex, product);
     }
 }
