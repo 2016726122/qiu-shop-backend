@@ -7,6 +7,7 @@ import com.qiushop.qiushopbackend.mapper.BusinessLaunchRepository;
 import com.qiushop.qiushopbackend.mapper.UserRepository;
 import com.qiushop.qiushopbackend.pojo.BusinessLaunch;
 import com.qiushop.qiushopbackend.pojo.UserInfo;
+import com.qiushop.qiushopbackend.ticket.proxy.DirectorProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,9 @@ public class UserService {
     //注入 BusinessLaunchRepository，用于查询业务投放数据
     @Autowired
     private BusinessLaunchRepository businessLaunchRepository;
+
+    @Autowired
+    private DirectorProxy directorProxy;
 
     //注入 duty.chain
     @Value("${duty.chain}")
@@ -107,5 +111,9 @@ public class UserService {
                 }
             }
         }
+    }
+
+    public Object createTicket(String type, String productId, String content, String title, String bankInfo, String taxId) {
+        return directorProxy.buildTicket(type, productId, content, title, bankInfo, taxId);
     }
 }
