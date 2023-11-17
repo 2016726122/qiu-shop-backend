@@ -1,5 +1,6 @@
 package com.qiushop.qiushopbackend.service;
 
+import com.qiushop.qiushopbackend.ordermanagement.audit.*;
 import com.qiushop.qiushopbackend.ordermanagement.command.OrderCommand;
 import com.qiushop.qiushopbackend.ordermanagement.command.OrderCommandInvoker;
 import com.qiushop.qiushopbackend.ordermanagement.state.OrderState;
@@ -7,6 +8,10 @@ import com.qiushop.qiushopbackend.ordermanagement.state.OrderStateChangeAction;
 import com.qiushop.qiushopbackend.pay.facade.PayFacade;
 import com.qiushop.qiushopbackend.pojo.Order;
 import com.qiushop.qiushopbackend.service.inter.OrderServiceInterface;
+import com.qiushop.qiushopbackend.transaction.colleague.AbstractCustomer;
+import com.qiushop.qiushopbackend.transaction.colleague.Buyer;
+import com.qiushop.qiushopbackend.transaction.colleague.Payer;
+import com.qiushop.qiushopbackend.transaction.mediator.Mediator;
 import com.qiushop.qiushopbackend.utils.RedisCommonProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
@@ -16,6 +21,7 @@ import org.springframework.statemachine.persist.StateMachinePersister;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
 
 @Service
 public class OrderService implements OrderServiceInterface {
@@ -40,6 +46,21 @@ public class OrderService implements OrderServiceInterface {
     @Autowired
     private PayFacade payFacade;
 
+    @Autowired
+    private Mediator mediator;
+
+    @Autowired
+    private CreateOrderLog createOrderLog;
+
+    @Autowired
+    private PayOrderLog payOrderLog;
+
+    @Autowired
+    private SendOrderLog sendOrderLog;
+
+    @Autowired
+    private ReceiveOrderLog receiveOrderLog;
+
     //订单创建
     @Override
     public Order createOrder(String productId) {
@@ -55,6 +76,9 @@ public class OrderService implements OrderServiceInterface {
         //调用命令模式
         OrderCommandInvoker invoker = new OrderCommandInvoker();
         invoker.invoke(orderCommand, order);
+        //创建订单审计日志
+        createOrderLog.createAuditLog("用户信息","创建订单",orderId);
+        //发送订单日志到queue 略
         return order;
     }
 
@@ -70,6 +94,9 @@ public class OrderService implements OrderServiceInterface {
         if (changeStateAction(message,order)) {
             return order;
         }
+        payOrderLog.createAuditLog("用户信息","支付订单",orderId);
+        OrderAuditLog orderAuditLog = new OrderAuditLog();
+        payOrderLog.buildDetails(orderAuditLog);
         return null;
     }
 
@@ -85,6 +112,9 @@ public class OrderService implements OrderServiceInterface {
         if (changeStateAction(message,order)) {
             return order;
         }
+        sendOrderLog.createAuditLog("用户信息", "订单发货",orderId);
+        OrderAuditLog orderAuditLog = new OrderAuditLog();
+        sendOrderLog.buildDetails(orderAuditLog);
         return null;
     }
 
@@ -100,6 +130,7 @@ public class OrderService implements OrderServiceInterface {
         if (changeStateAction(message,order)) {
             return order;
         }
+        receiveOrderLog.createAuditLog("用户信息", "订单签收", orderId);
         return null;
     }
 
@@ -128,6 +159,25 @@ public class OrderService implements OrderServiceInterface {
         Order order = (Order) redisCommonProcessor.get(orderId);
         order.setPrice(price);
         return payFacade.pay(order,payType);
+    }
+
+    public void friendPay(String sourceCustomer, String orderId, String targetCustomer, String payResult, String role) {
+        //创建中介者
+//        Mediator mediator = new Mediator();
+        Buyer buyer = new Buyer(orderId, mediator, sourceCustomer);
+        Payer payer = new Payer(orderId, mediator, sourceCustomer);
+//        mediator.setBuyer(buyer);
+//        mediator.setPayer(payer);
+        HashMap<String, AbstractCustomer> map = new HashMap<>();
+        map.put("buyer", buyer);
+        map.put("payer", payer);
+        //将同事类配置到 customerInstances 中
+        mediator.customerInstances.put(orderId, map);
+        if (role.equals("B")) {
+            buyer.messageTransfer(orderId, targetCustomer, payResult);
+        } else if (role.equals("P")) {
+            payer.messageTransfer(orderId, targetCustomer, payResult);
+        }
     }
 
 }

@@ -5,10 +5,12 @@ import com.qiushop.qiushopbackend.ticket.director.Director;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
+
 @Component
-public abstract class DirectorProxy extends AbstractDirector {
+public class DirectorProxy extends AbstractDirector {
     //关联被代理角色
-    @Autowired
+    @Resource
     private Director director;
 
     @Override

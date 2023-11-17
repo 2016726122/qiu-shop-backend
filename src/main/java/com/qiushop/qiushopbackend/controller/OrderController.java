@@ -88,4 +88,9 @@ public class OrderController {
         }
 
     }
+
+    @PostMapping("/friendPay")
+    public void friendPay(String sourceCustomer, String orderId, String targetCustomer, String payResult, String role) {
+        orderService.friendPay(sourceCustomer, orderId, targetCustomer, payResult, role);
+    }
 }
